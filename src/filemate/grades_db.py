@@ -36,4 +36,3 @@ joshua.save()
 for student in Student.select():
     print(student.username)
 db.close()
-
