@@ -13,4 +13,3 @@ def compute_grade(average, section):
 
     else:
         return round(average * 2) / 2
-
