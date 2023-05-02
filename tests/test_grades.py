@@ -26,7 +26,7 @@ def test_compute_grade():
 
 
 def test_invalid_grade():
-# Checks whether compute_grade() raises error
+    # Checks whether compute_grade() raises error
 
 def test_compute_gpa():
     pass

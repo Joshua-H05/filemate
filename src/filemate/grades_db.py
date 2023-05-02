@@ -108,6 +108,7 @@ if __name__ == "__main__":
     print(semester)
     grades = select_student_semester_grades(user_id=1, semester=1)
     print(grades)
+
     """for student in Student.select():
         print(student.username)
 
