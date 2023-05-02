@@ -70,7 +70,8 @@ def create_grades():
 
 
 def select_student(id):
-    return Student.select().where(Student.user_id == id)
+    student = Student.select().where(Student.user_id == id)
+    print(student)
 
 
 def select_student_semesters(user_id):
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     db.connect()
     db.create_tables([Student, Semester, Grade])
     bob = select_student(1)
-    print(bob)
+    select_student(1)
     print(select_student_semesters(1))
 
     for student in Student.select():
