@@ -23,3 +23,7 @@ def compute_average(grades_info):
 
     average = round(weighted_sum / sum(grades_info.values()), 3)
     return average
+
+
+def compute_gpa():
+    pass

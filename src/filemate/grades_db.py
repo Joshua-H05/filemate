@@ -1,5 +1,6 @@
 from peewee import *
 from datetime import date
+import json
 
 db = SqliteDatabase('grades.db')
 
@@ -8,9 +9,16 @@ class Student(Model):
     user_id = AutoField()
     username = CharField()
     school_section = TextField()
+    subjects = TextField()
 
     class Meta:
         database = db
+
+    def set_subjects(self, subjects):
+        self.subjects = json.dumps(subjects)
+
+    def get_subjects(self):
+        return json.loads(self.subjects)
 
 
 class Semester(Model):
@@ -39,7 +47,15 @@ class Grade(Model):
 
 # Add
 def insert_student(username, school_section):
-    user = Student.create(username=username, school_section=school_section)
+    user = Student.create(username=username, school_section=school_section, subjects=[])
+    user.save()
+
+
+def add_subject(user_id, subject):
+    user = Student.get(Student.user_id == user_id)
+    subjects = user.get_subjects()
+    subjects.append(subject)
+    user.set_subjects(subjects)
     user.save()
 
 
@@ -122,7 +138,7 @@ def select_student_semester_subject_grades(user_id, semester, subject):
 
 def list_all():
     for student in Student.select():
-        print(student.username, student.user_id)
+        print(student.username, student.user_id, student.subjects)
 
     for semester in Semester.select():
         print(semester.student.username, semester.name)
@@ -163,6 +179,8 @@ if __name__ == "__main__":
     create_all()
     list_all()
     delete_grade(grade_id=2)
-    print("grade 2")
+    print("deleted grade 2")
+    add_subject(1, "math")
+    print("bob now studies math")
     list_all()
     db.close()
