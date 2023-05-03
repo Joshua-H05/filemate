@@ -96,12 +96,21 @@ def select_student_semester_grades(user_id, semester):
     return results
 
 
+def list_all():
+    for student in Student.select():
+        print(student.username)
+
+    for semester in Semester.select():
+        print(semester.student.username, semester.name)
+
+    for grade in Grade.select():
+        print(grade.student.username, grade.semester.name, grade.subject, grade.grade, grade.weight, grade.date)
+
+
 if __name__ == "__main__":
     db.connect()
     db.create_tables([Student, Semester, Grade])
-    """create_students()
-    create_semesters()
-    create_grades()"""
+
     student = select_student(user_id=1)
     print(student)
     semester = select_student_semesters(user_id=1)
@@ -109,12 +118,4 @@ if __name__ == "__main__":
     grades = select_student_semester_grades(user_id=1, semester=1)
     print(grades)
 
-    """for student in Student.select():
-        print(student.username)
-
-    for semester in Semester.select():
-        print(semester.student.username, semester.name)
-
-    for grade in Grade.select():
-        print(grade.student.username, grade.semester.name, grade.subject, grade.grade, grade.weight, grade.date)"""
     db.close()

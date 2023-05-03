@@ -13,3 +13,13 @@ def compute_grade(average, section):
 
     else:
         return round(average * 2) / 2
+
+
+def compute_average(grades_info):
+    # requires a dict with grades as keys and weights as values
+    weighted_sum = 0
+    for grade, weight in grades_info.items():
+        weighted_sum += grade * weight
+
+    average = round(weighted_sum / sum(grades_info.values()), 3)
+    return average
