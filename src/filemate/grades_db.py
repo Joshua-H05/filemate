@@ -202,7 +202,9 @@ def main():
     averages_bob = compute_all_semester_averages(user_id=1, semester_id=1)
     print(f"Bob's averages are: {averages_bob}")
     grades_bob = compute_all_semester_grades(averages_bob, section="SG")
-    print(grades_bob)
+    print(f"Bob's grades are: {grades_bob}")
+    bob_gpa = grades.compute_gpa(grades_bob)
+    print(f"Bob's GPA is {bob_gpa}")
 
     db.close()
 

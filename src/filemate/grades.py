@@ -28,4 +28,4 @@ def compute_average(grades_info):
 
 
 def compute_gpa(grades):
-    return sum(grades) / len(grades)
+    return sum(grades.values()) / len(grades)
