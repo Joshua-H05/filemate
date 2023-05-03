@@ -42,6 +42,7 @@ class Grade(Model):
     class Meta:
         database = db
 
+
 # Should I create a table for student gpas?
 
 
@@ -163,7 +164,7 @@ def delete_grade(grade_id):
     Grade.delete().where(Grade.grade_id == grade_id).execute()
 
 
-if __name__ == "__main__":
+def main():
     db.connect()
     db.create_tables([Student, Semester, Grade])
 
@@ -184,3 +185,7 @@ if __name__ == "__main__":
     print("bob now studies math")
     list_all()
     db.close()
+
+
+if __name__ == "__main__":
+    main()

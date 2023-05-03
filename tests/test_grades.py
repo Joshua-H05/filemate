@@ -1,7 +1,6 @@
 import filemate.grades as grades
 import pytest
 
-
 def test_compute_average():
     assert grades.compute_average({5: 1, 6: 0.5}) == 5.333
 
