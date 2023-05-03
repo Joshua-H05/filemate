@@ -124,10 +124,14 @@ def select_student_semesters(user_id):
 
 
 def select_student_semester_grades(user_id, semester):
-    grades = Grade.select().where((Grade.student == user_id) | (Grade.semester == semester))
+    grades = Grade.select().where((Grade.student == user_id) & (Grade.semester == semester))
     results = []
     for grade in grades:
-        results.append((grade.subject, grade.grade, grade.weight, grade.date))
+        results.append(
+            {"subject": grade.subject,
+             "grade": grade.grade,
+             "weight": grade.weight,
+             "date": grade.date})
 
     return results
 
@@ -138,7 +142,10 @@ def select_student_semester_subject_grades(user_id, semester, subject):
 
     results = []
     for grade in query:
-        results.append((grade.subject, grade.grade, grade.weight, grade.date))
+        results.append(
+            {"grade": grade.grade,
+             "weight": grade.weight,
+             "date": grade.date})
 
     return results
 
@@ -170,7 +177,6 @@ def delete_grade(grade_id):
     Grade.delete().where(Grade.grade_id == grade_id).execute()
 
 
-@pysnooper.snoop()
 def compute_all_semester_averages(user_id, semester_id):
     averages = {}
     student = Student.get(Student.user_id == user_id)
@@ -209,6 +215,8 @@ def main():
     stats = compute_all_stats(user_id=1, semester_id=1)
     print(f"Bob\'s averages are: {stats['averages']} \n "
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
+    print(select_student_semester_grades(user_id=1, semester=1))
+    print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English"))
 
     db.close()
 
