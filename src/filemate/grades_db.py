@@ -1,7 +1,7 @@
 from peewee import *
 from datetime import date
 import json
-from filemate import grades
+from filemate import grades as fg
 import pysnooper
 
 db = SqliteDatabase('grades.db')
@@ -181,15 +181,22 @@ def compute_all_semester_averages(user_id, semester_id):
         for grade in query:
             exams_and_weights[grade.grade] = grade.weight
         print(exams_and_weights)
-        averages[subject] = grades.compute_average(exams_and_weights)
+        averages[subject] = fg.compute_average(exams_and_weights)
 
     return averages
 
 
 def compute_all_semester_grades(averages, section):
     for subject, average in averages.items():
-        averages[subject] = grades.compute_grade(average, section=section)
+        averages[subject] = fg.compute_grade(average, section=section)
     return averages
+
+
+def compute_all_stats(user_id, semester_id):
+    averages = compute_all_semester_averages(user_id=user_id, semester_id=semester_id)
+    grades = compute_all_semester_grades(averages, section="SG")
+    gpa = fg.compute_gpa(grades)
+    return {"averages": averages, "grades": grades, "gpa": gpa}
 
 
 def main():
@@ -199,12 +206,9 @@ def main():
     add_subject(user_id=1, subject="Math")
     add_subject(user_id=1, subject="English")
     list_all()"""
-    averages_bob = compute_all_semester_averages(user_id=1, semester_id=1)
-    print(f"Bob's averages are: {averages_bob}")
-    grades_bob = compute_all_semester_grades(averages_bob, section="SG")
-    print(f"Bob's grades are: {grades_bob}")
-    bob_gpa = grades.compute_gpa(grades_bob)
-    print(f"Bob's GPA is {bob_gpa}")
+    stats = compute_all_stats(user_id=1, semester_id=1)
+    print(f"Bob\'s averages are: {stats['averages']} \n "
+          f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
 
     db.close()
 
