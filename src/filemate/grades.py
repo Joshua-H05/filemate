@@ -1,3 +1,5 @@
+
+
 class GradeValueError(ValueError):
     pass
 
@@ -25,5 +27,5 @@ def compute_average(grades_info):
     return average
 
 
-def compute_gpa():
-    pass
+def compute_gpa(grades):
+    return sum(grades) / len(grades)

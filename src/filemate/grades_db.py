@@ -1,6 +1,8 @@
 from peewee import *
 from datetime import date
 import json
+from filemate import grades
+import pysnooper
 
 db = SqliteDatabase('grades.db')
 
@@ -67,30 +69,34 @@ def insert_semester(username, name):
 
 
 def insert_grade(username, semester_name, subject, grade, weight, date):
-    semester = Semester.select().where((Semester.student == username) | (Semester.name == semester_name))
+    semester = Semester.select().where((Semester.student == username) & (Semester.name == semester_name))
     student = Student.select().where(Student.username == username)
     grade = Grade.create(student=student, semester=semester, subject=subject, grade=grade, weight=weight, date=date)
     grade.save()
 
 
 def create_students():
-    insert_student(username="bob", school_section="IS")
-    insert_student(username="tom", school_section="SG")
-    insert_student(username="ginny", school_section="SG")
+    insert_student(username="bob", school_section="SG")
 
 
 def create_semesters():
     insert_semester("bob", "spring 2023")
     insert_semester("bob", "fall 2023")
-    insert_semester("ginny", "spring 2022")
-    insert_semester("tom", "spring 2024")
 
 
 def create_grades():
-    insert_grade(username="bob", semester_name="spring 2023", subject="math", grade=5.3, weight=1,
+    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.9, weight=1,
                  date=date(2023, 5, 23))
-    insert_grade(username="ginny", semester_name="spring 2022", subject="English", grade=6, weight=1,
+    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.7, weight=1,
+                 date=date(2023, 5, 29))
+    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.6, weight=1,
+                 date=date(2023, 6, 18))
+    insert_grade(username="bob", semester_name="spring 2023", subject="English", grade=6, weight=1,
                  date=date(2023, 5, 23))
+    insert_grade(username="bob", semester_name="spring 2023", subject="English", grade=5.5, weight=1,
+                 date=date(2023, 6, 23))
+    insert_grade(username="bob", semester_name="fall 2023", subject="English", grade=5.83, weight=1,
+                 date=date(2022, 9, 23))
 
 
 def create_all():
@@ -128,7 +134,7 @@ def select_student_semester_grades(user_id, semester):
 
 def select_student_semester_subject_grades(user_id, semester, subject):
     query = Grade.select().where(
-        (Grade.student == user_id) | (Grade.semester == semester) | (Grade.subject == subject))
+        (Grade.student == user_id) & (Grade.semester == semester) & (Grade.subject == subject))
 
     results = []
     for grade in query:
@@ -142,7 +148,7 @@ def list_all():
         print(student.username, student.user_id, student.subjects)
 
     for semester in Semester.select():
-        print(semester.student.username, semester.name)
+        print(semester.student.username, semester.name, semester.semester_id)
 
     for grade in Grade.select():
         print(grade.student.username, grade.semester.name, grade.subject, grade.grade, grade.weight, grade.date)
@@ -164,26 +170,40 @@ def delete_grade(grade_id):
     Grade.delete().where(Grade.grade_id == grade_id).execute()
 
 
+@pysnooper.snoop()
+def compute_all_semester_averages(user_id, semester_id):
+    averages = {}
+    student = Student.get(Student.user_id == user_id)
+    subjects = student.get_subjects()
+    for subject in subjects:
+        exams_and_weights = {}
+        query = Grade.select().where((Grade.subject == subject) & (Grade.student == user_id) & (Grade.semester == semester_id))
+        for grade in query:
+            exams_and_weights[grade.grade] = grade.weight
+        print(exams_and_weights)
+        averages[subject] = grades.compute_average(exams_and_weights)
+
+    return averages
+
+
+def compute_all_semester_grades(averages, section):
+    for subject, average in averages.items():
+        averages[subject] = grades.compute_grade(average, section=section)
+    return averages
+
+
 def main():
     db.connect()
     db.create_tables([Student, Semester, Grade])
+    """create_all()
+    add_subject(user_id=1, subject="Math")
+    add_subject(user_id=1, subject="English")
+    list_all()"""
+    averages_bob = compute_all_semester_averages(user_id=1, semester_id=1)
+    print(f"Bob's averages are: {averages_bob}")
+    grades_bob = compute_all_semester_grades(averages_bob, section="SG")
+    print(grades_bob)
 
-    """ student = select_student(user_id=1)
-    print(student)
-    semester = select_student_semesters(user_id=1)
-    print(semester)
-    grades = select_student_semester_grades(user_id=1, semester=1)
-    print(grades)
-    math_grades = select_student_semester_subject_grades(user_id=1, semester=1, subject="math")
-    print(math_grades)"""
-
-    create_all()
-    list_all()
-    delete_grade(grade_id=2)
-    print("deleted grade 2")
-    add_subject(1, "math")
-    print("bob now studies math")
-    list_all()
     db.close()
 
 
