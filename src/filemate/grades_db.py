@@ -36,6 +36,7 @@ class Grade(Model):
 
 # Should I create a table for student gpas?
 
+
 # Add
 def insert_student(username, school_section):
     user = Student.create(username=username, school_section=school_section)

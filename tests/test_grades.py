@@ -6,6 +6,7 @@ def test_compute_average():
     assert grades.compute_average({5: 1, 6: 0.5}) == 5.333
 
 
+
 def test_compute_grade():
     assert grades.compute_grade(5.88, "SG") == 6
 
