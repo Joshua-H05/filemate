@@ -9,50 +9,44 @@
     <title>Here is an overview of your grades</title>
 </head>
 <body>
-    <h1> Your current GPA is {{gpa}}</h1>
-    <h2> Here are your current subject grades: </h2>
-    <table>
-        <tr>
-            {% for subject in grades.keys() %}
-                <th>{{ subject }}</th>
-            {% endfor %}
-        </tr>
+    <div>
+        <h1> Your current GPA is {{gpa}}</h1>
+        <h2> Here are your current subject grades: </h2>
+    </div>
 
-        <tr>
-            {% for grade in grades.values() %}
-                <td>{{ grade }}</td>
-            {% endfor %}
-        </tr>
-    </table>
-    <h2>Here is a record of all your grades in each subject</h2>
-
-    {% for subject in subject_record.keys() %}
-        <h3>Subject: {{ subject }}</h3>
-        <table>
+    <div class="container mt-3">
+        <table class=" table table-bordered ">
             <tr>
-                {% for key in subject_record[subject][0].keys()%}
-                <tr>
-                    <th>{{ key }}</th>
-                    {% for dict in subject_record[subject] %}
-                        <td>{{dict[key]}}</td>
-                    {% endfor %}
-
-                </tr>
+                {% for subject in grades.keys() %}
+                    <th>{{ subject }}</th>
                 {% endfor %}
             </tr>
-            <tbody>
-                {% for i in range(subject | length) %}
+
+            <tr>
+                {% for grade in grades.values() %}
+                    <td>{{ grade }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+        <h2>Here is a record of all your grades in each subject</h2>
+
+        {% for subject in subject_record.keys() %}
+            <h3>Subject: {{ subject }}</h3>
+            <table class="table table-striped">
                 <tr>
-                    {% for grade in subject_record[subject]%}
-                        {%for value in grade.values()%}
-                            <td> {{value[i]}} </td>
+                    {% for key in subject_record[subject][0].keys()%}
+                    <tr>
+                        <th>{{ key }}</th>
+                        {% for dict in subject_record[subject] %}
+                            <td>{{dict[key]}}</td>
                         {% endfor %}
+
+                    </tr>
                     {% endfor %}
                 </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
 
 
 </body>
