@@ -11,5 +11,17 @@
 </head>
 <body>
     <h1> Your current GPA is {{gpa}}</h1>
+    <h2> Here are your current subject grades: </h2>
+    {%for subject, grade in grades.items() %}
+        <ul>{{subject}}: {{grade}}</ul>
+    {% endfor %}
+    <h2>Here is a record of all your grades in each subject</h2>
+    {% for subject, grades in subject_record.items()%}
+        <h3>{{ subject }}</h3>
+            {% for grade in grades %}
+                <ul>{{grade}}</ul>
+            {% endfor%}
+    {% endfor%}
+
 </body>
 </html>
