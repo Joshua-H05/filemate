@@ -15,4 +15,3 @@ def grades_overview():
     # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
     # are dicts containing info on each exam in the subject
     return render_template("grades.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)
-

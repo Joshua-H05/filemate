@@ -232,9 +232,7 @@ def main():
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
     print(select_student_semester_grades(user_id=1, semester=1))
     print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
-
     print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")
-
     db.close()
 
 
