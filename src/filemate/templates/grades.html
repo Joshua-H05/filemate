@@ -11,17 +11,32 @@
 <body>
     <h1> Your current GPA is {{gpa}}</h1>
     <h2> Here are your current subject grades: </h2>
-    {%for subject, grade in grades.items() %}
-        <ul>{{subject}}: {{grade}}</ul>
-    {% endfor %}
+    <table>
+        <tr>
+            {% for subject in grades.keys() %}
+                <th>{{ subject }}</th>
+            {% endfor %}
+        </tr>
+
+        <tr>
+            {% for grade in grades.values() %}
+                <td>{{ grade }}</td>
+            {% endfor %}
+        </tr>
+    </table>
     <h2>Here is a record of all your grades in each subject</h2>
 
     {% for subject in subject_record.keys() %}
-        <h1>Subject: {{ subject }}</h1>
+        <h3>Subject: {{ subject }}</h3>
         <table>
             <tr>
                 {% for key in subject_record[subject][0].keys()%}
+                <tr>
                     <th>{{ key }}</th>
+                    {% for dict in subject_record[subject] %}
+                        <td>{{dict[key]}}</td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
             </tr>
             <tbody>

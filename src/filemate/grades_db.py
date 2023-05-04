@@ -133,7 +133,6 @@ def select_all_student_semester_subject_grades(user_id, semester):
     return subject_exams
 
 
-
 def list_all():
     for student in Student.select():
         print(student.username, student.user_id, student.subjects)
