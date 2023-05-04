@@ -13,3 +13,4 @@ def grades_overview():
     gpa = stats["gpa"]
     subject_record = gdb.select_all_student_semester_subject_grades(user_id=1, semester=1)
     return render_template("grades.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)
+
