@@ -12,5 +12,7 @@ def grades_overview():
     grades = stats["grades"]  # dict with subjects as keys and grades as values
     gpa = stats["gpa"]
     subject_record = gdb.select_all_student_semester_subject_grades(user_id=1, semester=1)
+    # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
+    # are dicts containing info on each exam in the subject
     return render_template("grades.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)
 

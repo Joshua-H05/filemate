@@ -15,14 +15,29 @@
         <ul>{{subject}}: {{grade}}</ul>
     {% endfor %}
     <h2>Here is a record of all your grades in each subject</h2>
-    {% for subject, grades in subject_record.items()%}
-        <h3>{{ subject }}</h3>
-            {% for grade in grades %}
-                {% for key, value in grade.items()%}
-                    <ul>{{ key }}: {{ value }}</ul>
+
+    {% for subject in subject_record.keys() %}
+        <h1>Subject: {{ subject }}</h1>
+        <table>
+            <tr>
+                {% for key in subject_record[subject][0].keys()%}
+                    <th>{{ key }}</th>
                 {% endfor %}
-            {% endfor%}
-    {% endfor%}
+            </tr>
+            <tbody>
+                {% for i in range(subject | length) %}
+                <tr>
+                    {% for grade in subject_record[subject]%}
+                        {%for value in grade.values()%}
+                            <td> {{value[i]}} </td>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
 
 </body>
 </html>
