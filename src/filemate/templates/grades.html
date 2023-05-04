@@ -18,7 +18,9 @@
     {% for subject, grades in subject_record.items()%}
         <h3>{{ subject }}</h3>
             {% for grade in grades %}
-                <ul>{{grade}}</ul>
+                {% for key, value in grade.items()%}
+                    <ul>{{ key }}: {{ value }}</ul>
+                {% endfor %}
             {% endfor%}
     {% endfor%}
 
