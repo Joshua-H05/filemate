@@ -68,10 +68,10 @@ def insert_semester(username, name):
     semester.save()
 
 
-def insert_grade(username, semester_name, subject, grade, weight, date):
-    semester = Semester.select().where((Semester.student == username) & (Semester.name == semester_name))
+def insert_grade(username, semester_id, subject, grade, weight, date):
+    semester = Semester.select().where((Semester.student == username) & (Semester.semester_id == semester_id))
     student = Student.select().where(Student.username == username)
-    grade = Grade.create(student=student, semester=semester, subject=subject, grade=grade, weight=weight, date=date)
+    grade = Grade.create(student=student, semester_id=semester_id, subject=subject, grade=grade, weight=weight, date=date)
     grade.save()
 
 
@@ -200,18 +200,14 @@ def create_semesters():
 
 
 def create_grades():
-    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.9, weight=1,
-                 date=date(2023, 5, 23))
-    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.7, weight=1,
-                 date=date(2023, 5, 29))
-    insert_grade(username="bob", semester_name="spring 2023", subject="Math", grade=5.6, weight=1,
-                 date=date(2023, 6, 18))
-    insert_grade(username="bob", semester_name="spring 2023", subject="English", grade=6, weight=1,
-                 date=date(2023, 5, 23))
-    insert_grade(username="bob", semester_name="spring 2023", subject="English", grade=5.5, weight=1,
-                 date=date(2023, 6, 23))
-    insert_grade(username="bob", semester_name="fall 2023", subject="English", grade=5.83, weight=1,
-                 date=date(2022, 9, 23))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.9, weight=1,
+                 date=date(2023, 3, 5))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.8, weight=1,
+                 date=date(2023, 2, 24))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.7, weight=1,
+                 date=date(2023, 1, 18))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.8, weight=1,
+                 date=date(2023, 6, 19))
 
 
 def create_all():
@@ -225,8 +221,9 @@ def main():
     db.create_tables([Student, Semester, Grade])
     """create_all()
     add_subject(user_id=1, subject="Math")
-    add_subject(user_id=1, subject="English")
-    list_all()"""
+    add_subject(user_id=1, subject="English")"""
+    create_grades()
+    list_all()
     stats = compute_all_stats(user_id=1, semester_id=1)
     print(f"Bob\'s averages are: {stats['averages']} \n "
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")

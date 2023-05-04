@@ -5,6 +5,11 @@ from filemate import grades_db as gdb
 app = Flask(__name__)
 
 
+@app.route("/")
+def index():
+    return render_template("dashboard.html")
+
+
 @app.route("/grades")
 def grades_overview():
     stats = gdb.compute_all_stats(user_id=1, semester_id=1)
@@ -15,3 +20,18 @@ def grades_overview():
     # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
     # are dicts containing info on each exam in the subject
     return render_template("grades.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)
+
+
+@app.route("/study")
+def study():
+    return render_template("study.html")
+
+
+@app.route("/todo")
+def to_do():
+    return render_template("to_do.html")
+
+
+@app.route("/calendar")
+def calendar():
+    return render_template("calendar.html")
