@@ -16,7 +16,7 @@
          <h2> Here are your current subject grades: </h2>
     </div>
     <div class="container md-3">
-        <div class="table-responsive">
+        <div class="overflow-auto" style="max-width: 750px;">
             <table class="table">
                 <tr>
                     {% for subject in grades.keys() %}
@@ -26,7 +26,7 @@
 
                 <tr>
                     {% for grade in grades.values() %}
-                        <td>{{ grade }}</td>
+                        <td class="w-25 p-3">{{ grade }}</td>
                     {% endfor %}
                 </tr>
             </table>
