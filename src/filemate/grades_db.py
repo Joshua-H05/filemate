@@ -45,9 +45,6 @@ class Grade(Model):
         database = db
 
 
-# Should I create a table for student gpas?
-
-
 # Add
 def insert_student(username, school_section):
     user = Student.create(username=username, school_section=school_section, subjects=[])
@@ -218,7 +215,8 @@ def create_all():
 
 def main():
     db.connect()
-    db.create_tables([Student, Semester, Grade])
+    if False:
+        db.create_tables([Student, Semester, Grade])
     """create_all()
     add_subject(user_id=1, subject="Math")
     add_subject(user_id=1, subject="English")"""
