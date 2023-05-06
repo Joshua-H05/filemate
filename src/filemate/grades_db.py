@@ -66,9 +66,9 @@ def insert_semester(username, name):
 
 
 def insert_grade(username, semester_id, subject, grade, weight, date):
-    semester = Semester.select().where((Semester.student == username) & (Semester.semester_id == semester_id))
     student = Student.select().where(Student.username == username)
-    grade = Grade.create(student=student, semester_id=semester_id, subject=subject, grade=grade, weight=weight, date=date)
+    grade = Grade.create(student=student, semester_id=semester_id, subject=subject, grade=grade, weight=weight,
+                         date=date)
     grade.save()
 
 
@@ -85,7 +85,7 @@ def select_student_semesters(user_id):
     semesters = Semester.select().where(Semester.student == user_id)
     results = []
     for semester in semesters:
-        results.append((semester.semester_id, semester.student, semester.name))
+        results.append((semester.semester_id, semester.name))
 
     return results
 
@@ -164,7 +164,8 @@ def compute_all_semester_averages(user_id, semester_id):
     subjects = student.get_subjects()
     for subject in subjects:
         exams_and_weights = {}
-        query = Grade.select().where((Grade.subject == subject) & (Grade.student == user_id) & (Grade.semester == semester_id))
+        query = Grade.select().where(
+            (Grade.subject == subject) & (Grade.student == user_id) & (Grade.semester == semester_id))
         for grade in query:
             exams_and_weights[grade.grade] = grade.weight
         print(exams_and_weights)
@@ -205,6 +206,37 @@ def create_grades():
                  date=date(2023, 1, 18))
     insert_grade(username="bob", semester_id=1, subject="Math", grade=5.8, weight=1,
                  date=date(2023, 6, 19))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.7, weight=1,
+                 date=date(2023, 3, 25))
+    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.9, weight=1,
+                 date=date(2023, 5, 28))
+    insert_grade(username="bob", semester_id=1, subject="English", grade=5.9, weight=1,
+                 date=date(2023, 3, 5))
+    insert_grade(username="bob", semester_id=1, subject="English", grade=5.66, weight=1,
+                 date=date(2023, 1, 5))
+    insert_grade(username="bob", semester_id=1, subject="English", grade=5.6, weight=1,
+                 date=date(2023, 11, 25))
+    insert_grade(username="bob", semester_id=1, subject="English", grade=5.75, weight=1,
+                 date=date(2023, 6, 5))
+    insert_grade(username="bob", semester_id=1, subject="English", grade=5.8, weight=1,
+                 date=date(2023, 9, 5))
+
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.9, weight=1,
+                 date=date(2023, 3, 5))
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.8, weight=1,
+                 date=date(2023, 2, 24))
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.7, weight=1,
+                 date=date(2023, 1, 18))
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.8, weight=1,
+                 date=date(2023, 6, 19))
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.7, weight=1,
+                 date=date(2023, 3, 25))
+    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.9, weight=1,
+                 date=date(2023, 5, 28))
+    insert_grade(username="bob", semester_id=2, subject="English", grade=5.9, weight=1,
+                 date=date(2023, 3, 5))
+    insert_grade(username="bob", semester_id=2, subject="English", grade=5.66, weight=1,
+                 date=date(2023, 1, 5))
 
 
 def create_all():
@@ -215,19 +247,21 @@ def create_all():
 
 def main():
     db.connect()
-    if False:
-        db.create_tables([Student, Semester, Grade])
-    """create_all()
+    db.create_tables([Student, Semester, Grade])
+    create_all()
     add_subject(user_id=1, subject="Math")
-    add_subject(user_id=1, subject="English")"""
-    create_grades()
+    add_subject(user_id=1, subject="English")
     list_all()
     stats = compute_all_stats(user_id=1, semester_id=1)
-    print(f"Bob\'s averages are: {stats['averages']} \n "
+    """print(f"Bob\'s averages are: {stats['averages']} \n "
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
     print(select_student_semester_grades(user_id=1, semester=1))
     print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
-    print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")
+    print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")"""
+
+    semesters = select_student_semesters(user_id=1)
+    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
+    print(semester_id)
     db.close()
 
 
