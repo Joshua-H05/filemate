@@ -63,3 +63,20 @@ def to_do():
 @app.route("/calendar")
 def calendar():
     return render_template("calendar.html")
+
+
+@app.route("/sidebar")
+def sidebar():
+    user_id = 1
+    semesters = gdb.select_student_semesters(user_id=user_id)
+    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
+    print(user_id)
+    print(semester_id)
+    stats = gdb.compute_all_stats(user_id=user_id, semester_id=semester_id)
+    averages = stats["averages"]  # dict with subjects as keys and averages as values
+    grades = stats["grades"]  # dict with subjects as keys and grades as values
+    gpa = stats["gpa"]
+    subject_record = gdb.select_all_student_semester_subject_grades(user_id=user_id, semester=semester_id)
+    # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
+    # are dicts containing info on each exam in the subject
+    return render_template("sidebar.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)

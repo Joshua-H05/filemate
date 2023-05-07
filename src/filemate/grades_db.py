@@ -247,13 +247,13 @@ def create_all():
 
 def main():
     db.connect()
-    db.create_tables([Student, Semester, Grade])
+    """db.create_tables([Student, Semester, Grade])
     create_all()
     add_subject(user_id=1, subject="Math")
     add_subject(user_id=1, subject="English")
     list_all()
     stats = compute_all_stats(user_id=1, semester_id=1)
-    """print(f"Bob\'s averages are: {stats['averages']} \n "
+    print(f"Bob\'s averages are: {stats['averages']} \n "
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
     print(select_student_semester_grades(user_id=1, semester=1))
     print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
