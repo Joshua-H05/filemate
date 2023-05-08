@@ -1,48 +1,45 @@
+<div class="position-relative border">
 <div class="container">
-    <div class="container col-10">
+    <h1> Your current GPA is {{gpa}}</h1>
+</div>
+<div class="row">
+     <h2> Here are your current subject grades: </h2>
+</div>
+<div class="container-fluid d-flex vh-100">
+    <div class="overflow-auto" style="max-width: 1000px;">
+        <table class="table">
+            <tr>
+                {% for subject in grades.keys() %}
+                    <th>{{ subject }}</th>
+                {% endfor %}
+            </tr>
 
-    <div class="container">
-        <h1> Your current GPA is {{gpa}}</h1>
-    </div>
-    <div class="container">
-         <h2> Here are your current subject grades: </h2>
-    </div>
-    <div class="container md-3">
-        <div class="overflow-auto" style="max-width: 750px;">
-            <table class="table">
-                <tr>
-                    {% for subject in grades.keys() %}
-                        <th>{{ subject }}</th>
-                    {% endfor %}
-                </tr>
-
-                <tr>
-                    {% for grade in grades.values() %}
-                        <td class="w-25 p-3">{{ grade }}</td>
-                    {% endfor %}
-                </tr>
-            </table>
-            <h2>Here is a record of all your grades in each subject</h2>
-            {% for subject in subject_record.keys() %}
-                <h3>Subject: {{ subject }}</h3>
-                <div class="container md-3">
-                    <div class="col overflow-scroll">
-                        <table class="table table-striped">
+            <tr>
+                {% for grade in grades.values() %}
+                    <td class="w-25 p-3">{{ grade }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+        <h2>Here is a record of all your grades in each subject</h2>
+        {% for subject in subject_record.keys() %}
+            <h3>Subject: {{ subject }}</h3>
+            <div class="container md-3">
+                <div class="col overflow-scroll">
+                    <table class="table table-striped">
+                        <tr>
+                            {% for key in subject_record[subject][0].keys()%}
                             <tr>
-                                {% for key in subject_record[subject][0].keys()%}
-                                <tr>
-                                    <th>{{ key }}</th>
-                                    {% for dict in subject_record[subject] %}
-                                        <td>{{dict[key]}}</td>
-                                    {% endfor %}
-                                </tr>
+                                <th>{{ key }}</th>
+                                {% for dict in subject_record[subject] %}
+                                    <td>{{dict[key]}}</td>
                                 {% endfor %}
                             </tr>
-                        </table>
-                    </div>
+                            {% endfor %}
+                        </tr>
+                    </table>
                 </div>
-            {% endfor %}
-        </div>
-     </div>
-</div>
+            </div>
+        {% endfor %}
+    </div>
+ </div>
 </div>
