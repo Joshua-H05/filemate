@@ -1,31 +1,74 @@
 from flask import Flask, redirect, render_template, request
+import flask
+import flask_login
 import random
 
 from filemate import grades_db as gdb
 
 app = Flask(__name__)
+app.secret_key = 'filemate login'
+
+login_manager = flask_login.LoginManager()
+login_manager.init_app(app)
+
+users = {'foo@bar.tld': {'password': 'secret'}}
 
 
-class UserAuthorization:
-
-    def __init__(self):
-        self.is_logged_in = False
-        self.user_id = None
-
-    def user_login(self):
-        if not self.is_logged_in:
-            self.user_id = random.choice([1])
-        # Display login page
-        else:
-            return self.user_id
-
-
-bob = UserAuthorization()
-
-
-@app.route("/login")
-def login():
+class User(flask_login.UserMixin):
     pass
+
+
+@login_manager.user_loader
+def user_loader(email):
+    if email not in users:
+        return
+
+    user = User()
+    user.id = email
+    return user
+
+
+@login_manager.request_loader
+def request_loader(request):
+    email = request.form.get('email')
+    if email not in users:
+        return
+
+    user = User()
+    user.id = email
+    return user
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if flask.request.method == 'GET':
+        return render_template("login.html")
+
+    email = flask.request.form['email']
+    if email in users and flask.request.form['password'] == users[email]['password']:
+        user = User()
+        user.id = email
+        flask_login.login_user(user)
+        return flask.redirect(flask.url_for('protected'))
+
+    return 'Bad login'
+
+
+@app.route('/protected')
+@flask_login.login_required
+def protected():
+    return 'Logged in as: ' + flask_login.current_user.id
+
+
+@app.route('/logout')
+def logout():
+    flask_login.logout_user()
+    return 'Logged out'
+
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return 'Unauthorized', 401
 
 
 @app.route("/")
