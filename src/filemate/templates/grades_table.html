@@ -1,0 +1,50 @@
+<div class="justify-content-center mt-5">
+    <div class="container">
+        <h1 class="text-center"> Your GPA is {{gpa}}</h1>
+    </div>
+    <div class="row">
+         <h2 class="text-center"> Your subject grades: </h2>
+    </div>
+    <div class="container-fluid d-flex vh-100 d-flex justify-content-center">
+        <div>
+            <table class="table">
+                <tr>
+                    {% for subject in grades.keys() %}
+                        <th>{{ subject }}</th>
+                    {% endfor %}
+                </tr>
+
+                <tr>
+                    {% for grade in grades.values() %}
+                        <td class="w-25 p-3">{{ grade }}</td>
+                    {% endfor %}
+                </tr>
+            </table>
+            <h2 class="text-center">Here is a record of all your grades in each subject</h2>
+            <br/>
+            {% for subject in subject_record.keys() %}
+            <br/>
+                <div class="grid gap-0 row-gap-3">
+                    <h3 class="text-center">Subject: {{ subject }}</h3>
+                    <br/>
+                    <div class="container md-3">
+                        <div class="col overflow-scroll">
+                            <table class="table table-striped">
+                                <tr>
+                                    {% for key in subject_record[subject][0].keys()%}
+                                    <tr>
+                                        <th>{{ key }}</th>
+                                        {% for dict in subject_record[subject] %}
+                                            <td class="text-nowrap">{{dict[key]}}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+     </div>
+</div>
