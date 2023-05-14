@@ -7,7 +7,7 @@
              <h2> Here are your current subject grades: </h2>
         </div>
         <div class="container-fluid d-flex vh-100">
-            <div class="overflow-auto" style="max-width: 1000px;">
+            <div class="overflow-auto" style="max-width: 1500px;">
                 <table class="table">
                     <tr>
                         {% for subject in grades.keys() %}
@@ -32,7 +32,7 @@
                                     <tr>
                                         <th>{{ key }}</th>
                                         {% for dict in subject_record[subject] %}
-                                            <td>{{dict[key]}}</td>
+                                            <td class="text-nowrap">{{dict[key]}}</td>
                                         {% endfor %}
                                     </tr>
                                     {% endfor %}
