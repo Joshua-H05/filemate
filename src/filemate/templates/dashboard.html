@@ -3,6 +3,6 @@
 {% block title %}My Title{% endblock %}
 
 {% block content %}
-    <h1>Welcome to my website!</h1>
-    <p>This is the homepage.</p>
+    <p>Hello, {{username}}! You're logged in! Email: {{email}}</p>
+            <a class="button" href="/logout">Logout</a>
 {% endblock %}
