@@ -55,3 +55,4 @@ MANIFEST
 
 venv/
 /src/filemate/grades.db
+/src/filemate/sqlite_db
