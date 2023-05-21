@@ -173,17 +173,23 @@ def calendar():
 def grades_overview():
     user_id = 1
     semesters = gdb.select_student_semesters(user_id=user_id)
-    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
+    print(f"semesters: {semesters}")
+    semester_ids = list(semesters.keys())
+    semester_ids.sort(reverse=True)
+    print(semester_ids)
+    latest_semester_id = semester_ids[0]
+    latest_semester = semesters[latest_semester_id]
     print(user_id)
-    print(semester_id)
-    stats = gdb.compute_all_stats(user_id=user_id, semester_id=semester_id)
+    print(latest_semester_id)
+    stats = gdb.compute_all_stats(user_id=user_id, semester_id=latest_semester_id)
     averages = stats["averages"]  # dict with subjects as keys and averages as values
     grades = stats["grades"]  # dict with subjects as keys and grades as values
     gpa = stats["gpa"]
-    subject_record = gdb.select_all_student_semester_subject_grades(user_id=user_id, semester=semester_id)
+    subject_record = gdb.select_all_student_semester_subject_grades(user_id=user_id, semester=latest_semester_id)
     # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
     # are dicts containing info on each exam in the subject
-    return render_template("sidebar.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record)
+    return render_template("sidebar.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record,
+                           semesters=semesters, current_semester=latest_semester)
 
 
 if __name__ == "__main__":

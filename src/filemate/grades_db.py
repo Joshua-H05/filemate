@@ -81,11 +81,14 @@ def select_student(user_id):
     return results
 
 
+@pysnooper.snoop()
 def select_student_semesters(user_id):
     semesters = Semester.select().where(Semester.student == user_id)
-    results = []
+    results = {}
     for semester in semesters:
-        results.append((semester.semester_id, semester.name))
+        results[semester.semester_id] = semester.name
+
+    print(results)
 
     return results
 
