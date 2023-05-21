@@ -3,7 +3,7 @@ import flask
 import flask_login
 import random
 import pysnooper
-
+from dotenv import load_dotenv
 # Python standard libraries
 import json
 import os
@@ -28,6 +28,7 @@ from user import User
 from filemate import grades_db as gdb
 
 app = Flask(__name__)
+load_dotenv()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
 GOOGLE_DISCOVERY_URL = (
@@ -148,14 +149,7 @@ def logout():
 @app.route("/")
 def index():
     if current_user.is_authenticated:
-        return (
-            "<p>Hello, {}! You're logged in! Email: {}</p>"
-            "<div><p>Google Profile Picture:</p>"
-            '<img src="{}" alt="Google profile pic"></img></div>'
-            '<a class="button" href="/logout">Logout</a>'.format(
-                current_user.name, current_user.email, current_user.profile_pic
-            )
-        )
+        return render_template("dashboard.html", user=current_user.name, email=current_user.email)
     else:
         return '<a class="button" href="/login">Google Login</a>'
 
