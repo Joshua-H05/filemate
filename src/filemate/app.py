@@ -157,21 +157,21 @@ def calendar():
 
 @app.route("/sidebar")
 def grades_overview():
-    user_id = 1
-    semesters = gdb.select_student_semesters(user_id=user_id)
+    id = 1
+    semesters = gdb.select_student_semesters(id=id)
     print(f"semesters: {semesters}")
     semester_ids = list(semesters.keys())
     semester_ids.sort(reverse=True)
     print(semester_ids)
     latest_semester_id = semester_ids[0]
     latest_semester = semesters[latest_semester_id]
-    print(user_id)
+    print(id)
     print(latest_semester_id)
-    stats = gdb.compute_all_stats(user_id=user_id, semester_id=latest_semester_id)
+    stats = gdb.compute_all_stats(id=id, semester_id=latest_semester_id)
     averages = stats["averages"]  # dict with subjects as keys and averages as values
     grades = stats["grades"]  # dict with subjects as keys and grades as values
     gpa = stats["gpa"]
-    subject_record = gdb.select_all_student_semester_subject_grades(user_id=user_id, semester=latest_semester_id)
+    subject_record = gdb.select_all_student_semester_subject_grades(id=id, semester=latest_semester_id)
     # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
     # are dicts containing info on each exam in the subject
     return render_template("sidebar.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record,
