@@ -1,4 +1,6 @@
 from peewee import *
+from flask_peewee.admin import Admin
+from flask_peewee.auth import Auth, BaseUser
 from datetime import date
 import json
 from filemate import grades as fg
@@ -7,10 +9,10 @@ import pysnooper
 db = SqliteDatabase('grades.db')
 
 
-class Student(Model):
+class Student(Model, BaseUser):
     user_id = AutoField()
     username = CharField()
-    school_section = TextField()
+    email = TextField()
     subjects = TextField()
 
     class Meta:
@@ -46,8 +48,8 @@ class Grade(Model):
 
 
 # Add
-def insert_student(username, school_section):
-    user = Student.create(username=username, school_section=school_section, subjects=[])
+def insert_student(username, email):
+    user = Student.create(username=username, email=email, subjects=[])
     user.save()
 
 
@@ -75,6 +77,13 @@ def insert_grade(username, semester_id, subject, grade, weight, date):
 # Select
 def select_student(user_id):
     query = Student.select().where(Student.user_id == user_id)
+    results = []
+    for student in query:
+        results.append((student.user_id, student.username, student.school_section))
+    return results
+
+def select_student_email(email):
+    query = Student.select().where(Student.email == email)
     results = []
     for student in query:
         results.append((student.user_id, student.username, student.school_section))

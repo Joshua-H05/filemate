@@ -1,5 +1,4 @@
 from flask import Flask, redirect, render_template, request
-import flask
 import flask_login
 import random
 import pysnooper
@@ -7,7 +6,6 @@ from dotenv import load_dotenv
 # Python standard libraries
 import json
 import os
-import sqlite3
 
 # Third-party libraries
 from flask import Flask, redirect, request, url_for
@@ -20,14 +18,17 @@ from flask_login import (
 )
 from oauthlib.oauth2 import WebApplicationClient
 import requests
+from flask_peewee.admin import Admin
+from flask_peewee.auth import Auth
 
 # Internal imports
-from db import init_db_command
-from user import User
 
 from filemate import grades_db as gdb
 
 app = Flask(__name__)
+auth = Auth(app, db)
+
+
 load_dotenv()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -42,12 +43,6 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# Naive database setup
-try:
-    init_db_command()
-except sqlite3.OperationalError:
-    # Assume it's already been created
-    pass
 
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
@@ -56,7 +51,7 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return gdb.select_student(user_id)
 
 
 def get_google_provider_cfg():
@@ -115,25 +110,23 @@ def callback():
     # The user authenticated with Google, authorized your
     # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
-        picture = userinfo_response.json()["picture"]
         users_name = userinfo_response.json()["given_name"]
     else:
         return "User email not available or not verified by Google.", 400
 
     # Create a user in your db with the information provided
     # by Google
-    user = User(
-        id_=unique_id, name=users_name, email=users_email, profile_pic=picture
-    )
+    user = gdb.Student(username=users_name, email=users_email)
 
     # Doesn't exist? Add it to the database.
-    if not User.get(unique_id):
-        User.create(unique_id, users_name, users_email, picture)
+    """query = gdb.select_student_email(email=users_email)
+    if not query:
+        gdb.insert_student(username=users_name, email=users_email)"""
 
     # Begin user session by logging the user in
     login_user(user)
+    print("logged in")
 
     # Send user back to homepage
     return redirect(url_for("index"))
