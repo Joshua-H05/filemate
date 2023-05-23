@@ -1,6 +1,6 @@
 from peewee import *
 from flask import Flask
-from flask_peewee.admin import Admin
+from flask_peewee.db import Database
 from flask_peewee.auth import Auth, BaseUser
 from datetime import date
 import json
@@ -8,21 +8,14 @@ from filemate import grades as fg
 import pysnooper
 
 
-DATABASE = {
-    'name': 'grades.db',
-    'engine': 'peewee.SqliteDatabase',
-}
-DEBUG = True
-SECRET_KEY = 'ssshhhh'
+db = SqliteDatabase('grades.db')
 app = Flask(__name__)
-app.config.from_object(__name__)
-# instantiate the db wrapper
-db = Database(app)
 
 
 class User(Model, BaseUser):
     id = AutoField()
     username = CharField()
+    password = CharField(null=True)
     email = TextField()
     subjects = TextField()
 
@@ -92,6 +85,7 @@ def select_student(id):
     for student in query:
         results.append((student.id, student.username, student.school_section))
     return results
+
 
 def select_student_email(email):
     query = User.select().where(User.email == email)
@@ -212,7 +206,7 @@ def compute_all_stats(id, semester_id):
 
 # create
 def create_students():
-    insert_student(username="bob")
+    insert_student(username="bob", email="trial@gmail.com")
 
 
 def create_semesters():
@@ -268,23 +262,23 @@ def create_all():
     create_grades()
 
 
+@pysnooper.snoop()
 def main():
     db.connect()
-    """db.create_tables([Student, Semester, Grade])
+    db.create_tables([User, Semester, Grade])
     create_all()
-    add_subject(user_id=1, subject="Math")
-    add_subject(user_id=1, subject="English")
+    add_subject(id=1, subject="Math")
+    add_subject(id=1, subject="English")
     list_all()
-    stats = compute_all_stats(user_id=1, semester_id=1)
+    stats = compute_all_stats(id=1, semester_id=1)
     print(f"Bob\'s averages are: {stats['averages']} \n "
           f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
-    print(select_student_semester_grades(user_id=1, semester=1))
-    print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
-    print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")"""
+    print(select_student_semester_grades(id=1, semester=1))
+    print(select_student_semester_subject_grades(id=1, semester=1, subject="English1"))
+    print(f"Bob's grades are {select_all_student_semester_subject_grades(id=1, semester=1)}")
 
     semesters = select_student_semesters(id=1)
-    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
-    print(semester_id)
+    print(type(semesters))
     db.close()
 
 
