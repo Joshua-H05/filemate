@@ -1,7 +1,4 @@
 from flask import Flask, redirect, render_template, request
-import flask_login
-import random
-import pysnooper
 from dotenv import load_dotenv
 # Python standard libraries
 import json
@@ -9,23 +6,26 @@ import os
 
 # Third-party libraries
 from flask import Flask, redirect, request, url_for
-from flask_login import (
-    LoginManager,
-    current_user,
-    login_required,
-    login_user,
-    logout_user,
-)
+
 from oauthlib.oauth2 import WebApplicationClient
 import requests
-from flask_peewee.admin import Admin
 from flask_peewee.auth import Auth
+from flask_peewee.db import Database
 
 # Internal imports
 
 from filemate import grades_db as gdb
 
+DATABASE = {
+    'name': 'grades.db',
+    'engine': 'peewee.SqliteDatabase',
+}
+DEBUG = True
+SECRET_KEY = 'ssshhhh'
 app = Flask(__name__)
+app.config.from_object(__name__)
+# instantiate the db wrapper
+db = Database(app)
 auth = Auth(app, db)
 
 
@@ -38,20 +38,12 @@ GOOGLE_DISCOVERY_URL = (
 
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
-# User session management setup
-# https://flask-login.readthedocs.io/en/latest
-login_manager = LoginManager()
-login_manager.init_app(app)
-
 
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
 # Flask-Login helper to retrieve a user from our db
-@login_manager.user_loader
-def load_user(user_id):
-    return gdb.select_student(user_id)
 
 
 def get_google_provider_cfg():
@@ -117,7 +109,7 @@ def callback():
 
     # Create a user in your db with the information provided
     # by Google
-    user = gdb.Student(username=users_name, email=users_email)
+    user = gdb.User(username=users_name, email=users_email)
 
     # Doesn't exist? Add it to the database.
     """query = gdb.select_student_email(email=users_email)
@@ -125,7 +117,7 @@ def callback():
         gdb.insert_student(username=users_name, email=users_email)"""
 
     # Begin user session by logging the user in
-    login_user(user)
+    auth.login_user(user)
     print("logged in")
 
     # Send user back to homepage
@@ -133,16 +125,17 @@ def callback():
 
 
 @app.route("/logout")
-@login_required
+@auth.login_required
 def logout():
-    logout_user()
+    auth.logout_user()
     return redirect(url_for("index"))
 
 
 @app.route("/")
 def index():
-    if current_user.is_authenticated:
-        return render_template("dashboard.html", user=current_user.name, email=current_user.email)
+    if auth.get_logged_in_user():
+        return render_template("dashboard.html", user=auth.get_logged_in_user().name,
+                               email=auth.get_logged_in_user().email)
     else:
         return '<a class="button" href="/login">Google Login</a>'
 

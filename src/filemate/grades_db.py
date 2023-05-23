@@ -1,4 +1,5 @@
 from peewee import *
+from flask import Flask
 from flask_peewee.admin import Admin
 from flask_peewee.auth import Auth, BaseUser
 from datetime import date
@@ -6,10 +7,20 @@ import json
 from filemate import grades as fg
 import pysnooper
 
-db = SqliteDatabase('grades.db')
+
+DATABASE = {
+    'name': 'grades.db',
+    'engine': 'peewee.SqliteDatabase',
+}
+DEBUG = True
+SECRET_KEY = 'ssshhhh'
+app = Flask(__name__)
+app.config.from_object(__name__)
+# instantiate the db wrapper
+db = Database(app)
 
 
-class Student(Model, BaseUser):
+class User(Model, BaseUser):
     user_id = AutoField()
     username = CharField()
     email = TextField()
@@ -27,7 +38,7 @@ class Student(Model, BaseUser):
 
 class Semester(Model):
     semester_id = AutoField()
-    student = ForeignKeyField(Student, backref="semester", on_delete="CASCADE")
+    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
     name = TextField()
 
     class Meta:
@@ -37,7 +48,7 @@ class Semester(Model):
 class Grade(Model):
     grade_id = AutoField()
     semester = ForeignKeyField(Semester, backref="semester", on_delete="CASCADE")
-    student = ForeignKeyField(Student, backref="semester", on_delete="CASCADE")
+    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
     subject = TextField()
     grade = FloatField()
     weight = FloatField()
@@ -49,12 +60,12 @@ class Grade(Model):
 
 # Add
 def insert_student(username, email):
-    user = Student.create(username=username, email=email, subjects=[])
+    user = User.create(username=username, email=email, subjects=[])
     user.save()
 
 
 def add_subject(user_id, subject):
-    user = Student.get(Student.user_id == user_id)
+    user = User.get(User.user_id == user_id)
     subjects = user.get_subjects()
     subjects.append(subject)
     user.set_subjects(subjects)
@@ -62,13 +73,13 @@ def add_subject(user_id, subject):
 
 
 def insert_semester(username, name):
-    student = Student.select().where(Student.username == username)
+    student = User.select().where(User.username == username)
     semester = Semester.create(student=student, name=name)
     semester.save()
 
 
 def insert_grade(username, semester_id, subject, grade, weight, date):
-    student = Student.select().where(Student.username == username)
+    student = User.select().where(User.username == username)
     grade = Grade.create(student=student, semester_id=semester_id, subject=subject, grade=grade, weight=weight,
                          date=date)
     grade.save()
@@ -76,14 +87,14 @@ def insert_grade(username, semester_id, subject, grade, weight, date):
 
 # Select
 def select_student(user_id):
-    query = Student.select().where(Student.user_id == user_id)
+    query = User.select().where(User.user_id == user_id)
     results = []
     for student in query:
         results.append((student.user_id, student.username, student.school_section))
     return results
 
 def select_student_email(email):
-    query = Student.select().where(Student.email == email)
+    query = User.select().where(User.email == email)
     results = []
     for student in query:
         results.append((student.user_id, student.username, student.school_section))
@@ -130,7 +141,7 @@ def select_student_semester_subject_grades(user_id, semester, subject):
 
 
 def select_all_student_semester_subject_grades(user_id, semester):
-    student = Student.get((Student.user_id == user_id))
+    student = User.get((User.user_id == user_id))
     subjects = student.get_subjects()
 
     subject_exams = {}
@@ -143,7 +154,7 @@ def select_all_student_semester_subject_grades(user_id, semester):
 
 
 def list_all():
-    for student in Student.select():
+    for student in User.select():
         print(student.username, student.user_id, student.subjects)
 
     for semester in Semester.select():
@@ -155,7 +166,7 @@ def list_all():
 
 # Delete
 def delete_student(user_id):
-    Student.delete().where(Student.user_id == user_id).execute()
+    User.delete().where(User.user_id == user_id).execute()
     Semester.delete().where(Semester.student == user_id).execute()
     Grade.delete().where(Grade.student == user_id).execute()
 
@@ -172,7 +183,7 @@ def delete_grade(grade_id):
 # compute
 def compute_all_semester_averages(user_id, semester_id):
     averages = {}
-    student = Student.get(Student.user_id == user_id)
+    student = User.get(User.user_id == user_id)
     subjects = student.get_subjects()
     for subject in subjects:
         exams_and_weights = {}
