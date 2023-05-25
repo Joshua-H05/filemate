@@ -1,35 +1,24 @@
 from flask_login import UserMixin
 
-from db import get_db
+import filemate.grades_db as gdb
 
 
 class User(UserMixin):
-    def __init__(self, id_, name, email, profile_pic):
+    def __init__(self, id_, name, email, subjects=[]):
         self.id = id_
         self.name = name
         self.email = email
-        self.profile_pic = profile_pic
+        self.subjects = subjects
 
     @staticmethod
-    def get(user_id):
-        db = get_db()
-        user = db.execute(
-            "SELECT * FROM user WHERE id = ?", (user_id,)
-        ).fetchone()
+    def get(email):
+        user = gdb.select_student(email=email)
         if not user:
             return None
 
-        user = User(
-            id_=user[0], name=user[1], email=user[2], profile_pic=user[3]
-        )
+        user = User(id_=user[0], name=user[1], email=user[2])
         return user
 
     @staticmethod
-    def create(id_, name, email, profile_pic):
-        db = get_db()
-        db.execute(
-            "INSERT INTO user (id, name, email, profile_pic) "
-            "VALUES (?, ?, ?, ?)",
-            (id_, name, email, profile_pic),
-        )
-        db.commit()
+    def create(name, email):
+        gdb.insert_student(username=name, email=email)

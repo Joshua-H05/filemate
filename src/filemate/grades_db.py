@@ -1,44 +1,22 @@
-from __future__ import annotations
-
+from peewee import *
 from datetime import date
-from flask_login import UserMixin
 import json
 from filemate import grades as fg
 import pysnooper
 
-from typing import List
-
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
-from typing import List
-from typing import Optional
-from sqlalchemy import ForeignKey
-from sqlalchemy import String, Float, Date
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
-from sqlalchemy import create_engine, MetaData
-import datetime
-
-engine = create_engine("sqlite:///grades_test.db", echo=True)
-
-class Base(DeclarativeBase):
-    pass
+db = SqliteDatabase('grades.db')
 
 
-class User(Base):
-    __tablename__ = "user"
+class User(Model):
+    id = AutoField()
+    username = CharField()
+    email = CharField()
+    password = CharField(null=True)
+    school_section = TextField()
+    subjects = TextField()
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(30))
-    email: Mapped[str] = mapped_column(String(120))
-    subjects: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    semesters: Mapped[List["semesters"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    grades: Mapped[List["grades"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return '<User %r>' % self.username
+    class Meta:
+        database = db
 
     def set_subjects(self, subjects):
         self.subjects = json.dumps(subjects)
@@ -47,27 +25,26 @@ class User(Base):
         return json.loads(self.subjects)
 
 
-class Semester(Base):
-    __tablename__ = "semester"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    student: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
-    grades: Mapped[List["grades"]] = relationship(back_populates="semester", cascade="all, delete-orphan")
+class Semester(Model):
+    semester_id = AutoField()
+    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
+    name = TextField()
 
     class Meta:
         database = db
 
 
-class Grade(Base):
-    __tablename__ = "grade"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    semester: Mapped[int] = mapped_column(ForeignKey("semester.id"))
-    student: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    subject: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    grade: Mapped[float] = mapped_column(Float(), unique=False)
-    weight: Mapped[float] = mapped_column(Float(), unique=False)
-    date: Mapped[float] = mapped_column(Date(), unique=False)
+class Grade(Model):
+    grade_id = AutoField()
+    semester = ForeignKeyField(Semester, backref="semester", on_delete="CASCADE")
+    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
+    subject = TextField()
+    grade = FloatField()
+    weight = FloatField()
+    date = DateField()
+
+    class Meta:
+        database = db
 
 
 # Add
@@ -76,8 +53,8 @@ def insert_student(username, email):
     user.save()
 
 
-def add_subject(id, subject):
-    user = User.get(User.id == id)
+def add_subject(user_id, subject):
+    user = User.get(User.user_id == user_id)
     subjects = user.get_subjects()
     subjects.append(subject)
     user.set_subjects(subjects)
@@ -98,36 +75,25 @@ def insert_grade(username, semester_id, subject, grade, weight, date):
 
 
 # Select
-def select_student(id):
-    query = User.select().where(User.id == id)
-    results = []
-    for student in query:
-        results.append((student.id, student.username, student.school_section))
-    return results
-
-
-def select_student_email(email):
+def select_student(email):
     query = User.select().where(User.email == email)
     results = []
     for student in query:
-        results.append((student.id, student.username, student.school_section))
+        results.append((student.id, student.username, student.email, student.subjects))
     return results
 
 
-@pysnooper.snoop()
-def select_student_semesters(id):
-    semesters = Semester.select().where(Semester.student == id)
+def select_student_semesters(user_id):
+    semesters = Semester.select().where(Semester.student == user_id)
     results = {}
     for semester in semesters:
         results[semester.semester_id] = semester.name
 
-    print(results)
-
     return results
 
 
-def select_student_semester_grades(id, semester):
-    grades = Grade.select().where((Grade.student == id) & (Grade.semester == semester))
+def select_student_semester_grades(user_id, semester):
+    grades = Grade.select().where((Grade.student == user_id) & (Grade.semester == semester))
     results = []
     for grade in grades:
         results.append(
@@ -139,9 +105,9 @@ def select_student_semester_grades(id, semester):
     return results
 
 
-def select_student_semester_subject_grades(id, semester, subject):
+def select_student_semester_subject_grades(user_id, semester, subject):
     query = Grade.select().where(
-        (Grade.student == id) & (Grade.semester == semester) & (Grade.subject == subject))
+        (Grade.student == user_id) & (Grade.semester == semester) & (Grade.subject == subject))
 
     results = []
     for grade in query:
@@ -153,22 +119,22 @@ def select_student_semester_subject_grades(id, semester, subject):
     return results
 
 
-def select_all_student_semester_subject_grades(id, semester):
-    student = User.get((User.id == id))
+def select_all_student_semester_subject_grades(user_id, semester):
+    student = User.get((User.id == user_id))
     subjects = student.get_subjects()
 
     subject_exams = {}
 
     for subject in subjects:
         subject_exams[subject] = \
-            select_student_semester_subject_grades(id=id, semester=semester, subject=subject)
+            select_student_semester_subject_grades(user_id=user_id, semester=semester, subject=subject)
 
     return subject_exams
 
 
 def list_all():
     for student in User.select():
-        print(student.username, student.id, student.subjects)
+        print(student.username, student.user_id, student.subjects)
 
     for semester in Semester.select():
         print(semester.student.username, semester.name, semester.semester_id)
@@ -178,10 +144,10 @@ def list_all():
 
 
 # Delete
-def delete_student(id):
-    User.delete().where(User.id == id).execute()
-    Semester.delete().where(Semester.student == id).execute()
-    Grade.delete().where(Grade.student == id).execute()
+def delete_student(user_id):
+    User.delete().where(User.user_id == user_id).execute()
+    Semester.delete().where(Semester.student == user_id).execute()
+    Grade.delete().where(Grade.student == user_id).execute()
 
 
 def delete_semester(semester_id):
@@ -216,16 +182,17 @@ def compute_all_semester_grades(averages, section):
     return averages
 
 
-def compute_all_stats(id, semester_id):
-    averages = compute_all_semester_averages(id=id, semester_id=semester_id)
+def compute_all_stats(user_id, semester_id):
+    averages = compute_all_semester_averages(id=user_id, semester_id=semester_id)
     grades = compute_all_semester_grades(averages, section="SG")
     gpa = fg.compute_gpa(grades)
     return {"averages": averages, "grades": grades, "gpa": gpa}
 
 
 # create
+
 def create_students():
-    insert_student(username="bob", email="trial@gmail.com")
+    insert_student(username="bob", school_section="SG")
 
 
 def create_semesters():
@@ -281,10 +248,24 @@ def create_all():
     create_grades()
 
 
-@pysnooper.snoop()
 def main():
-    conn = engine.connect()
-    metadata = MetaData()
+    db.connect()
+    """db.create_tables([Student, Semester, Grade])
+    create_all()
+    add_subject(user_id=1, subject="Math")
+    add_subject(user_id=1, subject="English")
+    list_all()
+    stats = compute_all_stats(user_id=1, semester_id=1)
+    print(f"Bob\'s averages are: {stats['averages']} \n "
+          f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
+    print(select_student_semester_grades(user_id=1, semester=1))
+    print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
+    print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")"""
+
+    semesters = select_student_semesters(user_id=1)
+    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
+    print(semester_id)
+    db.close()
 
 
 if __name__ == "__main__":

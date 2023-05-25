@@ -1,61 +1,33 @@
 from flask import Flask, redirect, render_template, request
+import flask
+import flask_login
+import random
+import pysnooper
 from dotenv import load_dotenv
 # Python standard libraries
 import json
 import os
+import sqlite3
 
 # Third-party libraries
 from flask import Flask, redirect, request, url_for
-
+from flask_login import (
+    LoginManager,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
-
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_migrate import Migrate
-
-from flask_login import (
-    UserMixin,
-    login_user,
-    LoginManager,
-    current_user,
-    logout_user,
-    login_required,
-)
-
 # Internal imports
+from db import init_db_command
+from user import User
 
 from filemate import grades_db as gdb
 
-db = SQLAlchemy()
-migrate = Migrate()
-bcrypt = Bcrypt()
-
-login_manager = LoginManager()
-login_manager.session_protection = "strong"
-login_manager.login_view = "login"
-login_manager.login_message_category = "info"
-
-
 app = Flask(__name__)
-
-
-def create_app():
-    app = Flask(__name__)
-
-    app.secret_key = 'secret-key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///grades_test.db"
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
-    login_manager.init_app(app)
-    db.init_app(app)
-    migrate.init_app(app, db)
-    bcrypt.init_app(app)
-
-    return app
-
-
 load_dotenv()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -65,17 +37,30 @@ GOOGLE_DISCOVERY_URL = (
 
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
+# User session management setup
+# https://flask-login.readthedocs.io/en/latest
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Naive database setup
+try:
+    init_db_command()
+except sqlite3.OperationalError:
+    # Assume it's already been created
+    pass
 
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
 # Flask-Login helper to retrieve a user from our db
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
 
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
-
 
 
 @app.route("/login")
@@ -130,6 +115,7 @@ def callback():
     # The user authenticated with Google, authorized your
     # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
         users_name = userinfo_response.json()["given_name"]
     else:
@@ -137,12 +123,13 @@ def callback():
 
     # Create a user in your db with the information provided
     # by Google
-    user = gdb.User(name=users_name, email=users_email)
+    user = User(
+        id_=unique_id, name=users_name, email=users_email
+    )
 
     # Doesn't exist? Add it to the database.
-    query = gdb.select_student_email(email=users_email)
-    if not query:
-        gdb.insert_student(username=users_name, email=users_email)
+    if not User.get(email=users_email):
+        User.create(name=users_name, email=users_email)
 
     # Begin user session by logging the user in
     login_user(user)
@@ -161,9 +148,8 @@ def logout():
 
 @app.route("/")
 def index():
-    if current_user.is_authenticated():
-        return render_template("dashboard.html", user=current_user.name,
-                               email=current_user.get_logged_in_user().email)
+    if current_user.is_authenticated:
+        return render_template("dashboard.html", user=current_user.name, email=current_user.email)
     else:
         return '<a class="button" href="/login">Google Login</a>'
 
@@ -185,21 +171,21 @@ def calendar():
 
 @app.route("/sidebar")
 def grades_overview():
-    id = 1
-    semesters = gdb.select_student_semesters(id=id)
+    user_id = 1
+    semesters = gdb.select_student_semesters(user_id=user_id)
     print(f"semesters: {semesters}")
     semester_ids = list(semesters.keys())
     semester_ids.sort(reverse=True)
     print(semester_ids)
     latest_semester_id = semester_ids[0]
     latest_semester = semesters[latest_semester_id]
-    print(id)
+    print(user_id)
     print(latest_semester_id)
-    stats = gdb.compute_all_stats(id=id, semester_id=latest_semester_id)
+    stats = gdb.compute_all_stats(user_id=user_id, semester_id=latest_semester_id)
     averages = stats["averages"]  # dict with subjects as keys and averages as values
     grades = stats["grades"]  # dict with subjects as keys and grades as values
     gpa = stats["gpa"]
-    subject_record = gdb.select_all_student_semester_subject_grades(id=id, semester=latest_semester_id)
+    subject_record = gdb.select_all_student_semester_subject_grades(user_id=user_id, semester=latest_semester_id)
     # Returns a dict of dicts, where the keys of the main dict are the student's subjects and the values
     # are dicts containing info on each exam in the subject
     return render_template("sidebar.html", gpa=gpa, averages=averages, grades=grades, subject_record=subject_record,
