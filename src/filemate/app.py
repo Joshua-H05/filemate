@@ -9,24 +9,51 @@ from flask import Flask, redirect, request, url_for
 
 from oauthlib.oauth2 import WebApplicationClient
 import requests
-from flask_peewee.auth import Auth
-from flask_peewee.db import Database
+
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_migrate import Migrate
+
+from flask_login import (
+    UserMixin,
+    login_user,
+    LoginManager,
+    current_user,
+    logout_user,
+    login_required,
+)
 
 # Internal imports
 
 from filemate import grades_db as gdb
 
-DATABASE = {
-    'name': 'grades.db',
-    'engine': 'peewee.SqliteDatabase',
-}
-DEBUG = True
-SECRET_KEY = 'ssshhhh'
+db = SQLAlchemy()
+migrate = Migrate()
+bcrypt = Bcrypt()
+
+login_manager = LoginManager()
+login_manager.session_protection = "strong"
+login_manager.login_view = "login"
+login_manager.login_message_category = "info"
+
+
 app = Flask(__name__)
-app.config.from_object(__name__)
-# instantiate the db wrapper
-db = Database(app)
-auth = Auth(app, db)
+
+
+def create_app():
+    app = Flask(__name__)
+
+    app.secret_key = 'secret-key'
+    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///grades_test.db"
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+    login_manager.init_app(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    bcrypt.init_app(app)
+
+    return app
 
 
 load_dotenv()
@@ -48,6 +75,7 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
+
 
 
 @app.route("/login")
@@ -109,15 +137,15 @@ def callback():
 
     # Create a user in your db with the information provided
     # by Google
-    user = gdb.User(username=users_name, email=users_email)
+    user = gdb.User(name=users_name, email=users_email)
 
     # Doesn't exist? Add it to the database.
-    """query = gdb.select_student_email(email=users_email)
+    query = gdb.select_student_email(email=users_email)
     if not query:
-        gdb.insert_student(username=users_name, email=users_email)"""
+        gdb.insert_student(username=users_name, email=users_email)
 
     # Begin user session by logging the user in
-    auth.login_user(user)
+    login_user(user)
     print("logged in")
 
     # Send user back to homepage
@@ -125,17 +153,17 @@ def callback():
 
 
 @app.route("/logout")
-@auth.login_required
+@login_required
 def logout():
-    auth.logout_user()
+    logout_user()
     return redirect(url_for("index"))
 
 
 @app.route("/")
 def index():
-    if auth.get_logged_in_user():
-        return render_template("dashboard.html", user=auth.get_logged_in_user().name,
-                               email=auth.get_logged_in_user().email)
+    if current_user.is_authenticated():
+        return render_template("dashboard.html", user=current_user.name,
+                               email=current_user.get_logged_in_user().email)
     else:
         return '<a class="button" href="/login">Google Login</a>'
 

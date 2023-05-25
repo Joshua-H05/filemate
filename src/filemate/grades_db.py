@@ -1,26 +1,44 @@
-from peewee import *
-from flask import Flask
-from flask_peewee.db import Database
-from flask_peewee.auth import Auth, BaseUser
+from __future__ import annotations
+
 from datetime import date
+from flask_login import UserMixin
 import json
 from filemate import grades as fg
 import pysnooper
 
+from typing import List
 
-db = SqliteDatabase('grades.db')
-app = Flask(__name__)
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from typing import List
+from typing import Optional
+from sqlalchemy import ForeignKey
+from sqlalchemy import String, Float, Date
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
+from sqlalchemy import create_engine, MetaData
+import datetime
+
+engine = create_engine("sqlite:///grades_test.db", echo=True)
+
+class Base(DeclarativeBase):
+    pass
 
 
-class User(Model, BaseUser):
-    id = AutoField()
-    username = CharField()
-    password = CharField(null=True)
-    email = TextField()
-    subjects = TextField()
+class User(Base):
+    __tablename__ = "user"
 
-    class Meta:
-        database = db
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(30))
+    email: Mapped[str] = mapped_column(String(120))
+    subjects: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    semesters: Mapped[List["semesters"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    grades: Mapped[List["grades"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return '<User %r>' % self.username
 
     def set_subjects(self, subjects):
         self.subjects = json.dumps(subjects)
@@ -29,26 +47,27 @@ class User(Model, BaseUser):
         return json.loads(self.subjects)
 
 
-class Semester(Model):
-    semester_id = AutoField()
-    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
-    name = TextField()
+class Semester(Base):
+    __tablename__ = "semester"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    grades: Mapped[List["grades"]] = relationship(back_populates="semester", cascade="all, delete-orphan")
 
     class Meta:
         database = db
 
 
-class Grade(Model):
-    grade_id = AutoField()
-    semester = ForeignKeyField(Semester, backref="semester", on_delete="CASCADE")
-    student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
-    subject = TextField()
-    grade = FloatField()
-    weight = FloatField()
-    date = DateField()
-
-    class Meta:
-        database = db
+class Grade(Base):
+    __tablename__ = "grade"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    semester: Mapped[int] = mapped_column(ForeignKey("semester.id"))
+    student: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    subject: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    grade: Mapped[float] = mapped_column(Float(), unique=False)
+    weight: Mapped[float] = mapped_column(Float(), unique=False)
+    date: Mapped[float] = mapped_column(Date(), unique=False)
 
 
 # Add
@@ -264,22 +283,8 @@ def create_all():
 
 @pysnooper.snoop()
 def main():
-    db.connect()
-    db.create_tables([User, Semester, Grade])
-    create_all()
-    add_subject(id=1, subject="Math")
-    add_subject(id=1, subject="English")
-    list_all()
-    stats = compute_all_stats(id=1, semester_id=1)
-    print(f"Bob\'s averages are: {stats['averages']} \n "
-          f"His grades are {stats['grades']}, and his gpa is {stats['gpa']}")
-    print(select_student_semester_grades(id=1, semester=1))
-    print(select_student_semester_subject_grades(id=1, semester=1, subject="English1"))
-    print(f"Bob's grades are {select_all_student_semester_subject_grades(id=1, semester=1)}")
-
-    semesters = select_student_semesters(id=1)
-    print(type(semesters))
-    db.close()
+    conn = engine.connect()
+    metadata = MetaData()
 
 
 if __name__ == "__main__":
