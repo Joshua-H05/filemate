@@ -1,18 +1,24 @@
 from peewee import *
 from datetime import date
+import os
 import json
 from filemate import grades as fg
 import pysnooper
 
-db = SqliteDatabase('grades.db')
+
+PROJECT_ROOT = os.path.abspath(os.curdir)
+print(PROJECT_ROOT)
+DATA = "data"
+db = SqliteDatabase(f"{PROJECT_ROOT}/{DATA}/grades_test.db")
+print(f"{PROJECT_ROOT}/{DATA}/grades_test.db")
 
 
 class User(Model):
-    id = AutoField()
+    google_id = CharField()
     username = CharField()
     email = CharField()
     password = CharField(null=True)
-    school_section = TextField()
+    school_section = TextField(null=True)
     subjects = TextField()
 
     class Meta:
@@ -48,8 +54,8 @@ class Grade(Model):
 
 
 # Add
-def insert_student(username, email):
-    user = User.create(username=username, email=email, subjects=[])
+def insert_student(google_id, username, email):
+    user = User.create(google_id=google_id, username=username, email=email, subjects=[])
     user.save()
 
 
@@ -76,14 +82,35 @@ def insert_grade(username, semester_id, subject, grade, weight, date):
 
 # Select
 def select_student(email):
-    query = User.select().where(User.email == email)
-    results = []
-    for student in query:
-        results.append((student.id, student.username, student.email, student.subjects))
+    query = User.get(User.email == email)
+    results = (query.id, query.username, query.email, query.subjects)
+    print(results)
     return results
 
 
+def select_student_id(id):
+    try:
+        query = User.get(User.id == id)
+        results = (query.id, query.username, query.email, query.subjects)
+        print(results)
+        return results
+    except DoesNotExist:
+        return None
+
+
+def select_google_id(google_id):
+    try:
+        query = User.get(User.google_id == google_id)
+        results = (query.id, query.username, query.email, query.subjects)
+        print(results)
+        return results
+    except DoesNotExist:
+        return None
+
+
+@pysnooper.snoop(depth=2)
 def select_student_semesters(user_id):
+    print(type(user_id))
     semesters = Semester.select().where(Semester.student == user_id)
     results = {}
     for semester in semesters:
@@ -250,7 +277,8 @@ def create_all():
 
 def main():
     db.connect()
-    """db.create_tables([Student, Semester, Grade])
+    db.create_tables([User, Semester, Grade])
+    """
     create_all()
     add_subject(user_id=1, subject="Math")
     add_subject(user_id=1, subject="English")
@@ -261,10 +289,6 @@ def main():
     print(select_student_semester_grades(user_id=1, semester=1))
     print(select_student_semester_subject_grades(user_id=1, semester=1, subject="English1"))
     print(f"Bob's grades are {select_all_student_semester_subject_grades(user_id=1, semester=1)}")"""
-
-    semesters = select_student_semesters(user_id=1)
-    semester_id = sorted(semesters, key=lambda x: -x[0])[0][0]
-    print(semester_id)
     db.close()
 
 

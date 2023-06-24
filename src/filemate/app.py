@@ -22,7 +22,6 @@ from oauthlib.oauth2 import WebApplicationClient
 import requests
 
 # Internal imports
-from db import init_db_command
 from user import User
 
 from filemate import grades_db as gdb
@@ -42,13 +41,6 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# Naive database setup
-try:
-    init_db_command()
-except sqlite3.OperationalError:
-    # Assume it's already been created
-    pass
-
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
@@ -56,7 +48,7 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return User.get(id=user_id)
 
 
 def get_google_provider_cfg():
@@ -115,7 +107,8 @@ def callback():
     # The user authenticated with Google, authorized your
     # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
+        google_id = userinfo_response.json()["sub"]
+        print(type(google_id))
         users_email = userinfo_response.json()["email"]
         users_name = userinfo_response.json()["given_name"]
     else:
@@ -124,12 +117,14 @@ def callback():
     # Create a user in your db with the information provided
     # by Google
     user = User(
-        id_=unique_id, name=users_name, email=users_email
+        id_=google_id, name=users_name, email=users_email
     )
 
     # Doesn't exist? Add it to the database.
-    if not User.get(email=users_email):
-        User.create(name=users_name, email=users_email)
+    print(google_id)
+    if not User.get(id=google_id):
+        print("created")
+        User.create(id=unique_id, name=users_name, email=users_email)
 
     # Begin user session by logging the user in
     login_user(user)
@@ -169,18 +164,14 @@ def calendar():
     return render_template("calendar.html")
 
 
-@app.route("/sidebar")
+@app.route("/grades")
 def grades_overview():
-    user_id = 1
+    user_id = current_user.id
     semesters = gdb.select_student_semesters(user_id=user_id)
-    print(f"semesters: {semesters}")
     semester_ids = list(semesters.keys())
     semester_ids.sort(reverse=True)
-    print(semester_ids)
     latest_semester_id = semester_ids[0]
     latest_semester = semesters[latest_semester_id]
-    print(user_id)
-    print(latest_semester_id)
     stats = gdb.compute_all_stats(user_id=user_id, semester_id=latest_semester_id)
     averages = stats["averages"]  # dict with subjects as keys and averages as values
     grades = stats["grades"]  # dict with subjects as keys and grades as values
@@ -193,4 +184,7 @@ def grades_overview():
 
 
 if __name__ == "__main__":
-    app.run(ssl_context="adhoc")
+    app.run(
+        host='127.0.0.1', port="5000", debug=True,
+        ssl_context=('cert.pem', 'key.pem'),
+    )

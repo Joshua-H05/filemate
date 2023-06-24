@@ -5,9 +5,12 @@
   <div class=" col-2 vh-100" style="margin-top: 10px;">
     <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
       <a class="nav-link active" id="v-pills-home-tab" data-toggle="pill" href="#v-pills-home" role="tab" aria-controls="v-pills-home" aria-selected="true">{{current_semester}}</a>
-      {% for semester in semesters.values() %}
+      {% for id, semester in semesters.items() %}
         {% if semester != current_semester %}
-          <a class="nav-link" id="v-pills-profile-tab" data-toggle="pill" href="#v-pills-profile" role="tab" aria-controls="v-pills-profile" aria-selected="false">{{ semester }}</a>
+          <form action="/{{ url_for('grades_overview') }}">
+              <button class="nav-link" data-toggle="pill" role="tab" id="v-pills-profile-tab" aria-controls="v-pills-profile" type="submit" name="your_name" value="{{ id }}" aria-selected="false">{{ semester }}</button>
+          </form>
+          <a class="nav-link" data-toggle="pill" href="#v-pills-profile" role="tab" aria-controls="v-pills-profile" aria-selected="false">{{ semester }}</a>
         {% endif %}
       {% endfor %}
     </div>

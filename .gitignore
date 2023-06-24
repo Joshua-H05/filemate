@@ -54,7 +54,10 @@ MANIFEST
 .python-version
 
 venv/
-/src/filemate/grades.db
+/data/grades.db
 /src/filemate/sqlite_db
 /src/filemate/secret.json
+/src/filemate/.env
+/data/grades_test.db
+*.db
 /src/filemate/.env

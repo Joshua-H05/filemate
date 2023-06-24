@@ -11,14 +11,25 @@ class User(UserMixin):
         self.subjects = subjects
 
     @staticmethod
-    def get(email):
-        user = gdb.select_student(email=email)
+    def get(google_id):
+        user = gdb.select_student_id(id=google_id)
         if not user:
             return None
-
+        print(f"id: {user[0]}, name: {user[1]}, email: {user[2]}")
         user = User(id_=user[0], name=user[1], email=user[2])
         return user
 
     @staticmethod
-    def create(name, email):
-        gdb.insert_student(username=name, email=email)
+    def get_email(email):
+        user = gdb.select_student(email=email)
+        if not user:
+            return None
+        print(f"id: {user[0]}, name: {user[1]}, email: {user[2]}")
+        user = User(id_=user[0], name=user[1], email=user[2])
+        return user
+
+    @staticmethod
+    def create(id, name, email):
+        print(id)
+        print(type(id))
+        gdb.insert_student(google_id=id, username=name, email=email)
