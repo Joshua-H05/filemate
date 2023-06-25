@@ -48,7 +48,7 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(id=user_id)
+    return User.get(google_id=user_id)
 
 
 def get_google_provider_cfg():
@@ -122,9 +122,9 @@ def callback():
 
     # Doesn't exist? Add it to the database.
     print(google_id)
-    if not User.get(id=google_id):
+    if not User.get(google_id=google_id):
         print("created")
-        User.create(id=unique_id, name=users_name, email=users_email)
+        User.create(google_id=google_id, name=users_name, email=users_email)
 
     # Begin user session by logging the user in
     login_user(user)
@@ -162,7 +162,6 @@ def to_do():
 @app.route("/calendar")
 def calendar():
     return render_template("calendar.html")
-
 
 @app.route("/grades")
 def grades_overview():

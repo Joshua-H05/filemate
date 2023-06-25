@@ -60,7 +60,7 @@ def insert_student(google_id, username, email):
 
 
 def add_subject(user_id, subject):
-    user = User.get(User.user_id == user_id)
+    user = User.get(User.id == user_id)
     subjects = user.get_subjects()
     subjects.append(subject)
     user.set_subjects(subjects)
@@ -108,7 +108,6 @@ def select_google_id(google_id):
         return None
 
 
-@pysnooper.snoop(depth=2)
 def select_student_semesters(user_id):
     print(type(user_id))
     semesters = Semester.select().where(Semester.student == user_id)
@@ -208,7 +207,7 @@ def compute_all_semester_grades(averages, section):
         averages[subject] = fg.compute_grade(average, section=section)
     return averages
 
-
+@pysnooper.snoop()
 def compute_all_stats(user_id, semester_id):
     averages = compute_all_semester_averages(id=user_id, semester_id=semester_id)
     grades = compute_all_semester_grades(averages, section="SG")
@@ -277,7 +276,7 @@ def create_all():
 
 def main():
     db.connect()
-    db.create_tables([User, Semester, Grade])
+    add_subject(1, "math")
     """
     create_all()
     add_subject(user_id=1, subject="Math")

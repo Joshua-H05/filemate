@@ -12,7 +12,7 @@ class User(UserMixin):
 
     @staticmethod
     def get(google_id):
-        user = gdb.select_student_id(id=google_id)
+        user = gdb.select_google_id(google_id=google_id)
         if not user:
             return None
         print(f"id: {user[0]}, name: {user[1]}, email: {user[2]}")
@@ -29,7 +29,7 @@ class User(UserMixin):
         return user
 
     @staticmethod
-    def create(id, name, email):
+    def create(google_id, name, email):
         print(id)
         print(type(id))
-        gdb.insert_student(google_id=id, username=name, email=email)
+        gdb.insert_student(google_id=google_id, username=name, email=email)
