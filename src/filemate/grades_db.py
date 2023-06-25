@@ -2,15 +2,30 @@ from peewee import *
 from datetime import date
 import os
 import json
-from filemate import grades as fg
+import grades as fg
 import pysnooper
+from loguru import logger
 
+# log to a file rather than using print statements
+logger.add("logs/db.log")
 
 PROJECT_ROOT = os.path.abspath(os.curdir)
 print(PROJECT_ROOT)
 DATA = "data"
-db = SqliteDatabase(f"{PROJECT_ROOT}/{DATA}/grades_test.db")
+db = SqliteDatabase(
+    f"{PROJECT_ROOT}/{DATA}/grades_test.db",
+    pragmas=(
+        ("cache_size", -1024 * 64),  # 64MB page-cache.
+        ("journal_mode", "wal"),  # Use WAL-mode (you should always use this!).
+        ("foreign_keys", 1),
+    ),
+)  # Enforce foreign-key constraints.
+
 print(f"{PROJECT_ROOT}/{DATA}/grades_test.db")
+
+
+"""on the whole use CharField for names, addresses, any string fields. Use 
+TextField where the column will ocntain paragraphs of text"""
 
 
 class User(Model):
@@ -32,7 +47,6 @@ class User(Model):
 
 
 class Semester(Model):
-    semester_id = AutoField()
     student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
     name = TextField()
 
@@ -41,7 +55,6 @@ class Semester(Model):
 
 
 class Grade(Model):
-    grade_id = AutoField()
     semester = ForeignKeyField(Semester, backref="semester", on_delete="CASCADE")
     student = ForeignKeyField(User, backref="semester", on_delete="CASCADE")
     subject = TextField()
@@ -75,8 +88,14 @@ def insert_semester(username, name):
 
 def insert_grade(username, semester_id, subject, grade, weight, date):
     student = User.select().where(User.username == username)
-    grade = Grade.create(student=student, semester_id=semester_id, subject=subject, grade=grade, weight=weight,
-                         date=date)
+    grade = Grade.create(
+        student=student,
+        semester_id=semester_id,
+        subject=subject,
+        grade=grade,
+        weight=weight,
+        date=date,
+    )
     grade.save()
 
 
@@ -102,7 +121,7 @@ def select_google_id(google_id):
     try:
         query = User.get(User.google_id == google_id)
         results = (query.id, query.username, query.email, query.subjects)
-        print(results)
+        logger.info(results)
         return results
     except DoesNotExist:
         return None
@@ -110,7 +129,7 @@ def select_google_id(google_id):
 
 @pysnooper.snoop(depth=2)
 def select_student_semesters(user_id):
-    print(type(user_id))
+    logger.info(type(user_id))
     semesters = Semester.select().where(Semester.student == user_id)
     results = {}
     for semester in semesters:
@@ -120,28 +139,35 @@ def select_student_semesters(user_id):
 
 
 def select_student_semester_grades(user_id, semester):
-    grades = Grade.select().where((Grade.student == user_id) & (Grade.semester == semester))
+    grades = Grade.select().where(
+        (Grade.student == user_id) & (Grade.semester == semester)
+    )
     results = []
     for grade in grades:
         results.append(
-            {"subject": grade.subject,
-             "grade": grade.grade,
-             "weight": grade.weight,
-             "date": grade.date})
+            {
+                "subject": grade.subject,
+                "grade": grade.grade,
+                "weight": grade.weight,
+                "date": grade.date,
+            }
+        )
 
     return results
 
 
 def select_student_semester_subject_grades(user_id, semester, subject):
     query = Grade.select().where(
-        (Grade.student == user_id) & (Grade.semester == semester) & (Grade.subject == subject))
+        (Grade.student == user_id)
+        & (Grade.semester == semester)
+        & (Grade.subject == subject)
+    )
 
     results = []
     for grade in query:
         results.append(
-            {"grade": grade.grade,
-             "weight": grade.weight,
-             "date": grade.date})
+            {"grade": grade.grade, "weight": grade.weight, "date": grade.date}
+        )
 
     return results
 
@@ -153,8 +179,9 @@ def select_all_student_semester_subject_grades(user_id, semester):
     subject_exams = {}
 
     for subject in subjects:
-        subject_exams[subject] = \
-            select_student_semester_subject_grades(user_id=user_id, semester=semester, subject=subject)
+        subject_exams[subject] = select_student_semester_subject_grades(
+            user_id=user_id, semester=semester, subject=subject
+        )
 
     return subject_exams
 
@@ -167,7 +194,14 @@ def list_all():
         print(semester.student.username, semester.name, semester.semester_id)
 
     for grade in Grade.select():
-        print(grade.student.username, grade.semester.name, grade.subject, grade.grade, grade.weight, grade.date)
+        print(
+            grade.student.username,
+            grade.semester.name,
+            grade.subject,
+            grade.grade,
+            grade.weight,
+            grade.date,
+        )
 
 
 # Delete
@@ -194,7 +228,10 @@ def compute_all_semester_averages(id, semester_id):
     for subject in subjects:
         exams_and_weights = {}
         query = Grade.select().where(
-            (Grade.subject == subject) & (Grade.student == id) & (Grade.semester == semester_id))
+            (Grade.subject == subject)
+            & (Grade.student == id)
+            & (Grade.semester == semester_id)
+        )
         for grade in query:
             exams_and_weights[grade.grade] = grade.weight
         print(exams_and_weights)
@@ -218,6 +255,7 @@ def compute_all_stats(user_id, semester_id):
 
 # create
 
+
 def create_students():
     insert_student(username="bob", school_section="SG")
 
@@ -227,46 +265,161 @@ def create_semesters():
     insert_semester("bob", "fall 2023")
 
 
+# put these in a test function and populate with iteration or ideally insert_many()
 def create_grades():
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.9, weight=1,
-                 date=date(2023, 3, 5))
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.8, weight=1,
-                 date=date(2023, 2, 24))
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.7, weight=1,
-                 date=date(2023, 1, 18))
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.8, weight=1,
-                 date=date(2023, 6, 19))
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.7, weight=1,
-                 date=date(2023, 3, 25))
-    insert_grade(username="bob", semester_id=1, subject="Math", grade=5.9, weight=1,
-                 date=date(2023, 5, 28))
-    insert_grade(username="bob", semester_id=1, subject="English", grade=5.9, weight=1,
-                 date=date(2023, 3, 5))
-    insert_grade(username="bob", semester_id=1, subject="English", grade=5.66, weight=1,
-                 date=date(2023, 1, 5))
-    insert_grade(username="bob", semester_id=1, subject="English", grade=5.6, weight=1,
-                 date=date(2023, 11, 25))
-    insert_grade(username="bob", semester_id=1, subject="English", grade=5.75, weight=1,
-                 date=date(2023, 6, 5))
-    insert_grade(username="bob", semester_id=1, subject="English", grade=5.8, weight=1,
-                 date=date(2023, 9, 5))
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 3, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.8,
+        weight=1,
+        date=date(2023, 2, 24),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.7,
+        weight=1,
+        date=date(2023, 1, 18),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.8,
+        weight=1,
+        date=date(2023, 6, 19),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.7,
+        weight=1,
+        date=date(2023, 3, 25),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="Math",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 5, 28),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="English",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 3, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="English",
+        grade=5.66,
+        weight=1,
+        date=date(2023, 1, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="English",
+        grade=5.6,
+        weight=1,
+        date=date(2023, 11, 25),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="English",
+        grade=5.75,
+        weight=1,
+        date=date(2023, 6, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=1,
+        subject="English",
+        grade=5.8,
+        weight=1,
+        date=date(2023, 9, 5),
+    )
 
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.9, weight=1,
-                 date=date(2023, 3, 5))
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.8, weight=1,
-                 date=date(2023, 2, 24))
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.7, weight=1,
-                 date=date(2023, 1, 18))
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.8, weight=1,
-                 date=date(2023, 6, 19))
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.7, weight=1,
-                 date=date(2023, 3, 25))
-    insert_grade(username="bob", semester_id=2, subject="Math", grade=5.9, weight=1,
-                 date=date(2023, 5, 28))
-    insert_grade(username="bob", semester_id=2, subject="English", grade=5.9, weight=1,
-                 date=date(2023, 3, 5))
-    insert_grade(username="bob", semester_id=2, subject="English", grade=5.66, weight=1,
-                 date=date(2023, 1, 5))
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 3, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.8,
+        weight=1,
+        date=date(2023, 2, 24),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.7,
+        weight=1,
+        date=date(2023, 1, 18),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.8,
+        weight=1,
+        date=date(2023, 6, 19),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.7,
+        weight=1,
+        date=date(2023, 3, 25),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="Math",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 5, 28),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="English",
+        grade=5.9,
+        weight=1,
+        date=date(2023, 3, 5),
+    )
+    insert_grade(
+        username="bob",
+        semester_id=2,
+        subject="English",
+        grade=5.66,
+        weight=1,
+        date=date(2023, 1, 5),
+    )
 
 
 def create_all():
@@ -294,3 +447,32 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+SQLite transactions can be opened in three different modes:
+
+Deferred (default) - only acquires lock when a read or write is performed. The first read creates a 
+shared lock and the first write creates a reserved lock. Because the acquisition of the lock is 
+deferred until actually needed, it is possible that another thread or process could create a 
+separate transaction and write to the database after the BEGIN on the current thread has executed.
+Immediate - a reserved lock is acquired immediately. In this mode, no other database may write 
+to the database or open an immediate or exclusive transaction. Other processes can continue to 
+read from the database, however.
+Exclusive - opens an exclusive lock which prevents all (except for read uncommitted) connections 
+from accessing the database until the transaction is complete.
+
+Example specifying the locking mode:
+
+db = SqliteDatabase('app.db')
+
+with db.atomic('EXCLUSIVE'):
+    do_something()
+
+
+@db.atomic('IMMEDIATE')
+def some_other_function():
+    # This function is wrapped in an "IMMEDIATE" transaction.
+    do_something_else()
+For more information, see the SQLite locking documentation. To learn more about transactions in 
+Peewee, see the Managing Transactions documentation.
+"""
